@@ -1,1 +1,1 @@
-Submodule for http://cfchou.github.io
+Static web page generator for http://cfchou.github.io

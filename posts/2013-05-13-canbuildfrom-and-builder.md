@@ -15,7 +15,6 @@ does a fantastic job. The pictures below are copied from [here](https://github.c
 ![collection.immutable](../images/collection_immutable.png)
 
 
-* Concrete classes are all leaf nodes.
 * For a trait A, there's a most-derived concrete class that builds the
    underlying object exposes the trait A as type.
 
@@ -56,7 +55,7 @@ more entities are created to mimic the collection library:
 
 
 
-To start, `bar()` which return 'That' is added to `QLike`. 
+To start, _bar()_ which return __That__ is added to _QLike_. 
 
     trait QLike[+A, +Repr] {
       def foo[B, That](q: B)(implicit cbf: CBF[Repr, B, That]): Int = 0
@@ -77,15 +76,15 @@ To start, `bar()` which return 'That' is added to `QLike`.
     }
 
 
-The newly added Budr is like collection.mutable.Builder but simplified a lot.
-`bar()`'s implementation reveals the basic usage of it: 
+The newly added _Budr_ is like _collection.mutable.Builder_ but is simplified a lot.
+_bar()'s_ implementation reveals the basic usage of it: 
 
-1. Use `CBF`'s `apply()` to provide a `Budr`. 
-2. Use `+=()` on the `Budr` to put element into it.
-3. In the end, `result()` on the `Budr` give the new collection of type `That`.
+1. Use _CBF_'s _apply()_ to provide a _Budr_. 
+2. Use _+=()_ on the _Budr_ to put element into it.
+3. In the end, _result()_ on the _Budr_ give the new collection of type __That__.
 
-`GCBF` needs to implement `apply()` to provide `Budr`. This job is delegated to
-`newBuilder` that Q1's companion object must implement.
+_GCBF_ needs to implement _apply()_ to provide _Budr_. This job is delegated to
+_newBuilder_ that _Q1_'s companion object must implement.
 
     trait QCompanion[+CC[_]] {
       def newBuilder[A]: Budr[A, CC[A]]
@@ -111,10 +110,53 @@ The newly added Budr is like collection.mutable.Builder but simplified a lot.
     }
 
 
+It can be seen that _QArrBuf_ plays the role of a most-derived concrete class that
+builds the underlying collection. Before showing it's definition, I add another
+layer of Q collection, Q2. Just like 
 
-It can be seen that `QArrBuf` plays the role of the most-derived concrete class that
-builds the underlying collection. 
 
+
+######################
+
+    trait Q2[+A] extends Q1[A] with QLike[A, Q2[A]]
+
+    object Q2 extends QFac[Q2] {
+        implicit def cbf[A]: CBF[Q2[_], A, Q2[A]] =
+          reusableGCBF.asInstanceOf[GCBF[A]]
+
+        // Budr[A, QArrBuf[A]] <: Budr[A, Q2[A]]
+        // FIXME: newArrBuf or newArrBuf[A]?
+        def newBuilder[A] = new QArrBuf // Budr[A, Q2[A]], enforced by QCompanion
+        def apply[A](a: A): Q2[A] = new Q2[A] {}
+    }
+
+
+
+
+
+
+
+
+It's itself a _Budr_ that 
+
+    // mutable
+    class QArrBuf[A] (initialSize: Int)
+    extends Q2[A]
+    with Budr[A, QArrBuf[A]] {
+      protected var array: Array[AnyRef] =
+        new Array[AnyRef](math.max(initialSize, 1))
+      protected var size0 = 0
+
+      def this() = this(16)
+
+      // doesn't implement resizable array
+      def +=(elem: A): this.type = {
+        array(size0) = elem.asInstanceOf[AnyRef]
+        size0 += 1
+        this
+      }
+      def result(): QArrBuf[A] = this
+    }
 
 
 

@@ -46,7 +46,7 @@ does a fantastic job. The pictures below are copied from [here](https://github.c
         sqOfMap: Seq[(Int, String)] = ArrayBuffer((1,no1), (2,no2))
 
 
-Deriving from [previous post](./2013-05-12-venture-out-on-canbuildfrom.html),
+Extending from [the previous post](./2013-05-12-venture-out-on-canbuildfrom.html),
 more entities are created to mimic the collection library:
 
     Budr        ---     Builder
@@ -55,7 +55,7 @@ more entities are created to mimic the collection library:
 
 
 
-To start, _bar()_ which return __That__ is added to _QLike_. 
+To start, _bar()_ which returns __That__ is added to _QLike_. 
 
     trait QLike[+A, +Repr] {
       def foo[B, That](q: B)(implicit cbf: CBF[Repr, B, That]): Int = 0
@@ -104,45 +104,45 @@ _newBuilder_ that _Q1_'s companion object must implement.
       implicit def cbf[A]: CBF[Q1[_], A, Q1[A]] =
       reusableGCBF.asInstanceOf[GCBF[A]]
 
-      // Budr[A, QArr[A]] <: Budr[A, Q1[A]]
-      // FIXME: newArrBuf or newArrBuf[A]?
+      def apply[A](a: A): Q1[A] = new Q1[A]
+
+      // Budr[A, QArrBuf[A]] <: Budr[A, Q1[A]]
       def newBuilder[A]: Budr[A, Q1[A]] = new QArrBuf[A]
     }
 
 
 It can be seen that _QArrBuf_ plays the role of a most-derived concrete class that
-builds the underlying collection. Before showing it's definition, I add another
-layer of Q collection, Q2. Just like 
+builds the underlying collection. _QArrBuf_ itself derives __Budr[A, QArrBuf[A]]__
+and __Q1__ so that it conforms to the polymorphic Budr[A, Q1[A]]. 
 
+Before showing _QArrBuf_'s definition, I add another
+flavor to the Q collection, _Q2_. Just like in the collection library there are many 
+traits on the way from concrete classes up to the root trait Traversable. Think
+_Q1_ as _Traversable_, _Q2_ as _Iterable_ or any other deriving traits.
 
-
-######################
 
     trait Q2[+A] extends Q1[A] with QLike[A, Q2[A]]
 
     object Q2 extends QFac[Q2] {
-        implicit def cbf[A]: CBF[Q2[_], A, Q2[A]] =
-          reusableGCBF.asInstanceOf[GCBF[A]]
 
-        // Budr[A, QArrBuf[A]] <: Budr[A, Q2[A]]
-        // FIXME: newArrBuf or newArrBuf[A]?
-        def newBuilder[A] = new QArrBuf // Budr[A, Q2[A]], enforced by QCompanion
-        def apply[A](a: A): Q2[A] = new Q2[A] {}
+      def apply[A](a: A): Q2[A] = new Q1[A] {}
+
+      // Budr[A, QArrBuf[A]] <: Budr[A, Q2[A]]
+      def newBuilder[A] = new QArrBuf 
     }
 
+_Q1_ and _Q2_ have a striking resemblance in their traits and companions except
+the types of _apply()_ and _newBuilder_ are tailored for _Q2_, and no implicit CBF
+is provided.
 
-
-
-
-
-
-
-It's itself a _Budr_ that 
+_QArrBuf_ is the most-derived concrete class for the Q collection, therefore it
+derives from _Q2_. And as stated before, itself is a _Budr_.
 
     // mutable
     class QArrBuf[A] (initialSize: Int)
-    extends Q2[A]
-    with Budr[A, QArrBuf[A]] {
+      extends Q2[A]
+      with Budr[A, QArrBuf[A]] {
+
       protected var array: Array[AnyRef] =
         new Array[AnyRef](math.max(initialSize, 1))
       protected var size0 = 0
@@ -158,8 +158,77 @@ It's itself a _Budr_ that
       def result(): QArrBuf[A] = this
     }
 
+The implementation is no doubt incomplete and has lots of flaws. Nevertheless,
+it's only used for showing the points I want to make.
+
+Till now, the Q collection's hierarchy is:
+
+    Q1 <- Q2 <- QArrBuf
+
+Now go back to bar() and try it on Q1 in REPL:
+
+    scala> val q1 = Q1(10)
+    q1: Q1[Int] = Q1$$anon$2@48ef1
+
+    scala> q1.bar("a string")
+    res0: Q1[String] = QArrBuf@1eff84d
+
+Like foo() [discuessed before](./2013-05-12-venture-out-on-canbuildfrom.html), 
+bar() needs an implicit _CBF_, and it happily finds one in _Q1_'s companion:
+
+    required: CBF[Q1[Int], String, Any]
+
+    found:    CBF[Q1[_], String, Q1[String]]
+
+The implicit _CBF_'s _apply()_ calls _newBuilder[String]_ to _new
+QArrBuf[String]_ which
+derives _Budr[String, QArrBuf[String]]_ and thus conforms to expected type
+_Budr[String, Q1[String]]_.
+
+Unlike _foo()_, _bar()_ needs type parameter __That__ as its type and _the found implicit helps
+it to resolve that_ __That__ _is_ __Q1[String]__.
+
+If I try _Q2.bar()_ in REPL:
+
+    scala> val q2 = Q2(20)
+    q2: Q2[Int] = Q2$$anon$1@1469fc2
+
+    scala> q2.bar("a string")
+    res0: Q1[String] = QArrBuf@1fea274
+
+Note that the dynamic type of _bar()_ in this case is _Q1[String]_ rather then
+_Q2[String]_. This is what happened: when looking up an implicit CBF, it tries
+Q2's companion but to no avail. Then the companion of Q2's superclass, Q1, is
+tried. Therefore, Q1's implicit CBF is used and __That__ is resolved to be
+Q1[String].
+
+To support __That__ to be Q2 or Q1, or whatever trait in between(although no such
+trait exists in the demonstration), an implicit CBF needs to be provided:
+
+    object Q2 extends QFac[Q2] {
+      implicit def cbf[A]: CBF[Q2[_], A, Q2[A]] =
+        reusableGCBF.asInstanceOf[GCBF[A]]
+
+      def apply[A](a: A): Q2[A] = new Q1[A] {}
+
+      // Budr[A, QArrBuf[A]] <: Budr[A, Q2[A]]
+      def newBuilder[A] = new QArrBuf 
+    }
+
+Finally, in REPL:
+    
+    scala> val q2 = Q2(20)
+    q2: Q2[Int] = Q2$$anon$1@1396284
+
+    scala> q2.bar("a string")
+    res0: Q2[String] = QArrBuf@19af075
+
+    scala> val q1: Q1[String] = q2.bar("a string")
+    q1: Q1[String] = QArrBuf@fd23e4
 
 
+
+[Gist](https://gist.github.com/cfchou/5713282)
 
 
 ###Reference###

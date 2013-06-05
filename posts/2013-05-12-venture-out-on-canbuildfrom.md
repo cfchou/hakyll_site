@@ -118,7 +118,7 @@ Now run `foo` in REPL:
 
 What's interesting but not shown here, is that the found implicit will then help 
 to infer foo's type parameter `That`. I'll try a more sophisticated example to
-demonstrate it in [another post](http://).
+demonstrate it in [another post](./2013-05-13-canbuildfrom-and-builder.html).
 
 
 [Gist](https://gist.github.com/cfchou/5704938)

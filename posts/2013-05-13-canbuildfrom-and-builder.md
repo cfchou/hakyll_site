@@ -196,7 +196,7 @@ If I try _Q2.bar()_ in REPL:
     scala> q2.bar("a string")
     res0: Q1[String] = QArrBuf@1fea274
 
-Note that the dynamic type of _bar()_ in this case is _Q1[String]_ rather then
+Note that the static type of _bar()_ in this case is _Q1[String]_ rather then
 _Q2[String]_. This is what happened: when looking up an implicit CBF, it tries
 Q2's companion but to no avail. Then the companion of Q2's superclass, Q1, is
 tried. Therefore, Q1's implicit CBF is used and __That__ is resolved to be

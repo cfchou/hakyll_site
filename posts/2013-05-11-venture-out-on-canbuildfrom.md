@@ -23,7 +23,8 @@ Roughly speaking, I try to imitate the class hierarchy of
     CBF     ---     CanBuildFrom
     GCBF    ---     GenericCanBuildFrom
 
-`QLike`, as many XXXLike's in the collection library, will provide the default and
+`QLike`, as many XXXLike's in the collection library(so called implementation
+traits), will provide the default and
 general implementation for many functions which make use of `CBF/CanBuildFrom`.
 
     class CBF[-Fr, -Elm, +To]

@@ -6,7 +6,7 @@ Following [the previous post](./2013-05-12-venture-out-on-canbuildfrom.html),
 I would like to have a really functioning CanBuildFrom instead of a do-nothing 
 demonstration. Which means it'll be able to build a collection.
 
-Since my approach is to mimic collection library, at least cosmetically. Some understanding
+My approach is to mimic collection library, at least cosmetically. Some understanding
 of how collections are organized in the library is necessary. For that [this
 discussion](http://stackoverflow.com/questions/1722137/scala-2-8-collections-design-tutorial?lq=1)
 does a fantastic job. The pictures below are copied from [here](https://github.com/sirthias/scala-collections-charts/downloads) as they are very helpful.
@@ -231,5 +231,21 @@ Finally, in REPL:
 [Gist](https://gist.github.com/cfchou/5713282)
 
 
-###Reference###
-[Scala 2.8 collections design tutorial](http://stackoverflow.com/questions/1722137/scala-2-8-collections-design-tutorial?lq=1)
+
+One more thing needs to be addressed. It's ok if running _foo()_ on Q2:
+
+    scala> val q2 = Q2("one", "two", "three")
+    q2: Q2[String] = QArrBuf@afb54d
+
+    scala> q2.foo(123)
+    res3: Int = 0
+
+It works even no implicit _CBF_ in O2's companion object is given. 
+This is what happened: when looking up an implicit CBF, it tries
+Q2's companion but to no avail. Then the companion of Q2's superclass, Q1, is
+tried and Q1's implicit CBF is found and used. 
+
+    required: CBF[Q2[String], Int, Any]
+
+    found:    CBF[Q1[String], Int, Q1[Int]]
+

@@ -12,7 +12,8 @@ type of element doesn't change. For example:
     }
 
 In this case, using __newBuilder__ in the campanion object of the
-trait in question(_Repr_) is sufficient. On the basis of [previous
+trait in question(_Repr_) is sufficient. 
+On the basis of [previous
 discussion](./2013-05-13-canbuildfrom-and-builder.html), I'll follow the collection
 library's pattern to add some abstractions, namely:
 

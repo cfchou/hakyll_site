@@ -3,12 +3,12 @@ title: Builder Basics
 ---
 
 Following [the previous post](./2013-05-11-venture-out-on-canbuildfrom.html),
-I would like to have a really functioning _CanBuildFrom_ instead of a do-nothing 
-one. In other words, it should be able to build a collection. In the
-collection library, _CanBuildFrom_ is deeply related to another trait called 
-_Builder_ which is going to be talked about in this article. Note that only 
-Builder itself will be discussed here. Its relationship to _CanBuildFrom_ will be
-saved for [another post].
+I would like to have a really functioning Q collection instead of a do-nothing 
+one. In other words, it should be able to store elements. 
+In the collection library, creating a collection to store elements is deeply
+related to a trait called _Builder_ which is going to be talked about in this 
+article. Note that only Builder itself will be discussed here. Its relationship 
+to _CanBuildFrom_ will be saved for [another post].
 
 I'll continue building a _Q_ collection that mimics the collection library, 
 at least cosmetically. Some understanding
@@ -22,10 +22,14 @@ does a fantastic job. The pictures below are copied from
 
 
 It can be seen from the pictures that for a trait A, there's a most-derived 
-concrete class which builds the underlying object exposes the trait A as type.
+concrete class which builds the underlying object exposes the trait A as type:
 
         scala> val sq = Seq(10,11)
         sq: Seq[Int] = List(10, 11)
+
+In this case REPL reports that val sq's __dynamic type__ is _Seq_ which is what
+the underlying object exposes as; and its __static type__ is _List_ which is 
+the most-derived concrete class.
 
 Having these pictures in mind, let's start to flesh out the Q collection from 
 [the previous post](./2013-05-11-venture-out-on-canbuildfrom.html).

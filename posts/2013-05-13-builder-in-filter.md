@@ -4,7 +4,7 @@ title: Builder in Filter
 
 _Builder_ is not only useful for creating a collection as what's been shown in
 [the previous post](./2013-05-12-builder-basics.html). It's also heavily used
-in functions of implementation traits, such as _filter_ in TraversableLike: 
+in functions of _implementation traits_, such as _filter_ in TraversableLike: 
 
     trait TraversableLike[+A, +Repr] extends ...
     {
@@ -13,15 +13,15 @@ in functions of implementation traits, such as _filter_ in TraversableLike:
         ...
     }
 
-No implicit _CanBuildFrom_ is involved as the types of collections in the
-results are still Repr. 
+No implicit _CanBuildFrom_ is needed as the type of collection involved in the
+results is still Repr. 
 
-    scala> List(1,2,3) filter (_ > 2)
-    res4: List[Int] = List(3)
+    scala> Seq(1,2,3) filter (_ > 2)
+    res4: Seq[Int] = List(3)
 
-In this case, filtering a List[Int] gives a List[Int]. Internally, 
-__newBuilder[Int]: Builder[Int, List[Int]]__ in List's companion object is used 
-to create the result. 
+In this case, filtering _Seq(1, 2, 3)_ gives a _Seq[Int]_. Internally, 
+__newBuilder[Int]: Builder[Int, Seq[Int]]__ in Seq's companion object is used 
+to create the result.
 
 On the basis of [previous discussion](./2013-05-12-builder-basics.html), 
 I'll implement _filter_ for the Q collection.

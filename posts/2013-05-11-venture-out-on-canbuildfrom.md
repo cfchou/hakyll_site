@@ -2,16 +2,16 @@
 title: Venture out on CanBuildFrom
 ---
 
-In this post, I'll loosely follow how the collection library makes use of
-`CanBuildFrom` to create a trivial collection trait.
+In this post, I'll loosely follow how the collection library uses `CanBuildFrom` 
+and create a trivial collection trait.
 
 Because nearly every class/trait inherits/mixes in many classes/traits, the
 first thing must be understood is the hierarchy and linearization of
-classes/traits. It's been explained in detail in [Programming in
+classes/traits. It's been explained in detail in Section 12.6 in [Programming in
 Scala](http://http://www.artima.com/shop/programming_in_scala_2ed). 
 
 I will create a trivial collection class called `Q` which bears no usefulness
-but can be used for demonstration. A couple of entities are also created to
+but can be used for demonstration. A couple of entities will also be created to
 cosmetically mimic the Scala collection library 2.10.
 
 Roughly speaking, I try to imitate the class hierarchy of
@@ -23,8 +23,8 @@ Roughly speaking, I try to imitate the class hierarchy of
     CBF     ---     CanBuildFrom
     GCBF    ---     GenericCanBuildFrom
 
-`QLike`, as many XXXLike's in the collection library(so called implementation
-traits), will provide the default and
+`QLike`, as many XXXLike's in the collection library(so called __implementation
+traits__), provides the default and
 general implementation for many functions which make use of `CBF/CanBuildFrom`.
 
     class CBF[-Fr, -Elm, +To]
@@ -41,7 +41,7 @@ general implementation for many functions which make use of `CBF/CanBuildFrom`.
 As `CBF` is not really used at the moment(`foo` always returns 0), it doesn't have
 any member.
 
-This can be tested in REPL:
+The code can be tested in REPL:
 
     scala> val q1 = Q1(10)
     q1: Q1[Int] = Q1$$anon$1@36536500
@@ -51,7 +51,7 @@ This can be tested in REPL:
                         ^
 
 Besides the fact that it evidently needs an implicit `CBF`, there's one more 
-thing worth noting. When `q1.foo(5)` is called, `CBF`'s type parameters of are: 
+thing worth noting. When `q1.foo(5)` is called, `CBF`'s type parameters are: 
 
     Repr    -->     Q1[Int]  // derived from selector's context
     B       -->     Int      // inferred from argument 5
@@ -64,7 +64,7 @@ whatever `B` is inferred to, I'd like to get an `CBF` for it. E.g.
     scala> q1.foo(5)            // B --> Int
     scala> q1.foo("string")     // B --> String
 
-I copy a technique that's also been used in the collection library:
+I copy a technique that's used in the collection library:
 
     import scala.language.higherKinds
 
@@ -85,7 +85,7 @@ I copy a technique that's also been used in the collection library:
 `QFac` is the factory that's derived by `Q1`'s companion. It has a special
 `CBF` called `reusableGCBF` which type is essentially `CBF[CC[_], Nothing, CC[Nothing]]`
 
-When implicit lookup happens, `cbf[A]` in object Q1 is tried to match the `CBF` required.
+When implicit lookup happens, `cbf[A]` in object Q1 is tried to match the implicit `CBF` required.
 It is done by casting `reusableGCBF`. For instance, If `q1.foo("a string")` is called,
 the required implicit is of type `CBF[Q1[Int], String, Any]`. `reusableGCBF` is casted from  
 `CBF[Q1[_], Nothing, Q1[Nothing]]` to  `CBF[Q1[_], String, Q1[String]]` in order to

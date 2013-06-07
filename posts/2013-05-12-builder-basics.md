@@ -1,5 +1,5 @@
 ---
-title: Builder and newBuilder Basics
+title: Builder Basics
 ---
 
 Following [the previous post](./2013-05-11-venture-out-on-canbuildfrom.html),
@@ -10,10 +10,10 @@ _Builder_ which is going to be talked about in this article. Note that only
 Builder itself will be discussed here. Its relationship to _CanBuildFrom_ will be
 saved for [another post].
 
-My approach is to create a _Q_ collection that mimics the collection library, 
+I'll continue building a _Q_ collection that mimics the collection library, 
 at least cosmetically. Some understanding
-of how collections are organized in the library is necessary. For that [this
-discussion](http://stackoverflow.com/questions/1722137/scala-2-8-collections-design-tutorial?lq=1)
+of how collections are organized in the library is necessary. For that matter, 
+[this discussion](http://stackoverflow.com/questions/1722137/scala-2-8-collections-design-tutorial?lq=1)
 does a fantastic job. The pictures below are copied from
 [here](https://github.com/sirthias/scala-collections-charts/downloads) and they are very helpful.
  
@@ -29,7 +29,7 @@ concrete class which builds the underlying object exposes the trait A as type.
 
 Having these pictures in mind, let's start to flesh out the Q collection from 
 [the previous post](./2013-05-11-venture-out-on-canbuildfrom.html).
-In the end, more entities will be created to mimic the collection library:
+In the end, those additional entities will be created to mimic the collection library:
 
     Budr                ---     Builder
     QCompanion          ---     GenericCompanion
@@ -37,7 +37,7 @@ In the end, more entities will be created to mimic the collection library:
 
 
 The newly added _Budr_ is like _collection.mutable.Builder_ but is simplified 
-a lot. It helps to build a collection of type _To_ containning elements of type
+a lot. It helps to build a collection of type _To_ containing elements of type
 _Elm_. 
 
     trait Budr[-Elm, +To] {

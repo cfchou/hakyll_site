@@ -9,7 +9,7 @@ and create a trivial collection trait.
 Because nearly every class/trait inherits/mixes in many classes/traits, the
 first thing must be understood is the hierarchy and linearization of
 classes/traits. It's been explained in detail in Section 12.6 in [Programming in
-Scala](http://http://www.artima.com/shop/programming_in_scala_2ed). 
+Scala](http://www.artima.com/shop/programming_in_scala_2ed). 
 
 I will create a trivial collection called `Q` which bears no usefulness
 but can be used for demonstration. A couple of entities will also be created to

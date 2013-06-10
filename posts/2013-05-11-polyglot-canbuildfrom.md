@@ -1,5 +1,6 @@
 ---
-title: Venture out on CanBuildFrom
+title: Polyglot CanBuildFrom
+tags: scala, CanBuildFrom
 ---
 
 In this post, I'll loosely follow how the collection library uses `CanBuildFrom` 
@@ -10,7 +11,7 @@ first thing must be understood is the hierarchy and linearization of
 classes/traits. It's been explained in detail in Section 12.6 in [Programming in
 Scala](http://http://www.artima.com/shop/programming_in_scala_2ed). 
 
-I will create a trivial collection class called `Q` which bears no usefulness
+I will create a trivial collection called `Q` which bears no usefulness
 but can be used for demonstration. A couple of entities will also be created to
 cosmetically mimic the Scala collection library 2.10.
 
@@ -23,9 +24,9 @@ Roughly speaking, I try to imitate the class hierarchy of
     CBF     ---     CanBuildFrom
     GCBF    ---     GenericCanBuildFrom
 
-`QLike`, as many XXXLike's in the collection library(so called __implementation
-traits__), provides the default and
-general implementation for many functions which make use of `CBF/CanBuildFrom`.
+`QLike`, as many XXXLike's in the collection library are so called 
+__implementation traits__). It provides the default and
+general implementation for many functions which make use of `CBF`.
 
     class CBF[-Fr, -Elm, +To]
 
@@ -50,8 +51,8 @@ The code can be tested in REPL:
                   q1.foo(5)
                         ^
 
-Besides the fact that it evidently needs an implicit `CBF`, there's one more 
-thing worth noting. When `q1.foo(5)` is called, `CBF`'s type parameters are: 
+Besides the fact that it evidently needs an implicit `CBF`, it's also
+worth noting what type parameters are resolved. When `q1.foo(5)` is called, `CBF`'s type parameters are: 
 
     Repr    -->     Q1[Int]  // derived from selector's context
     B       -->     Int      // inferred from argument 5
@@ -85,7 +86,7 @@ I copy a technique that's used in the collection library:
 `QFac` is the factory that's derived by `Q1`'s companion. It has a special
 `CBF` called `reusableGCBF` which type is essentially `CBF[CC[_], Nothing, CC[Nothing]]`
 
-_cbf[A]_ in object _Q1_ is a polymorphic method. When implicit lookup happens, 
+`cbf[A]` in object `Q1` is a polymorphic method. When implicit lookup happens, 
 it is tried to match the implicit `CBF` required.
 It is done by casting `reusableGCBF`. For instance, If `q1.foo("a string")` is called,
 the required implicit is of type `CBF[Q1[Int], String, Any]`. `reusableGCBF` is casted from  
@@ -96,7 +97,7 @@ conform.
 
     found:    CBF[Q1[_], String, Q1[String]]
     
-The variance check for `CBF[-Fr, -Elm, +To]` is valid as shown below. The arrow sign means "conform to".
+The variance for `CBF[-Fr, -Elm, +To]` is valid as shown below. The arrow sign means "conform to".
 
     variance      required      conformance     found
     ---------     ---------     -----------     -------  
@@ -119,8 +120,7 @@ Now run `foo` in REPL:
 
 
 What's interesting but not shown here, is that the found implicit will then help 
-to infer foo's type parameter `That`. I'll try a more sophisticated example to
-demonstrate it in [another post](./2013-05-13-canbuildfrom-and-builder.html).
+to infer `foo`'s type parameter `That`. I'll explore this in another post.
 
 
 [Gist](https://gist.github.com/cfchou/5704938)

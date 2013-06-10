@@ -1,10 +1,11 @@
 ---
 title: Builder in Filter
+tags: scala, Builder
 ---
 
-_Builder_ is not only useful for creating a collection as what's been shown in
+`Builder` is not only useful in creating a collection as what's been shown in
 [the previous post](./2013-05-12-builder-basics.html). It's also heavily used
-in functions of _implementation traits_, such as _filter_ in TraversableLike: 
+in functions of _implementation traits_, such as `filter` in `TraversableLike`: 
 
     trait TraversableLike[+A, +Repr] extends ...
     {
@@ -13,27 +14,27 @@ in functions of _implementation traits_, such as _filter_ in TraversableLike:
         ...
     }
 
-No implicit _CanBuildFrom_ is needed as the type of collection involved in the
-results is still Repr. 
+No implicit `CanBuildFrom` is needed as the type of collection involved in the
+results is still `Repr`. 
 
     scala> Seq(1,2,3) filter (_ > 2)
     res4: Seq[Int] = List(3)
 
-In this case, filtering _Seq(1, 2, 3)_ gives a _Seq[Int]_. Internally, 
-__newBuilder[Int]: Builder[Int, Seq[Int]]__ in Seq's companion object is used 
+In this case, `filter` over `Seq(1, 2, 3)` gives a `Seq[Int]`. Internally, 
+`newBuilder[Int]: Builder[Int, Seq[Int]]` in Seq's companion object is used 
 to create the result.
 
 On the basis of [previous discussion](./2013-05-12-builder-basics.html), 
-I'll implement _filter_ for the Q collection.
-More entities will be added to follow the collection library's pattern to add 
+I'll implement `filter` for the Q collection.
+More entities will be added to follow the collection library's structure to add 
 some abstractions, namely:
 
     HasNewBuilderRepr   ---      HasNewBuilder
     QTmpl               ---      GenericTraversableTemplate
 
 
-The first abstraction added is _HasNewBuilderRepr_, provides _Budr[A, Repr]_ that
-builds _Repr_ out of _Repr_. That is, the two collections are of the same type,
+The first abstraction added is `HasNewBuilderRepr`. It provides `Budr[A, Repr]` that
+builds `Repr` out of `Repr`. That is, the two collections are of the same type,
 so are their elements.
 
 
@@ -43,11 +44,12 @@ so are their elements.
     }
 
 
-In addition, _QTmpl_ is added. It is intended to be mixed in to _Q1_ or _Q2_ 
-trait. It's default implementation for _newBuilderRepr_ is simply pointing to 
-_newBuilder_ in companion objects which derives _QCompanion_. The suspicious 
-_@uncheckedVariance_ is ignored for now. Plus, QFac changes a bit to have
-a proper type bound; trait Q1/Q2 change to tell their own companion objects.
+In addition, `QTmpl` is added. It is intended to be mixed in to Q1 or Q2 
+trait. Its default implementation for `newBuilderRepr` is simply pointing to 
+`newBuilder` in corresponding companion objects which derives `QCompanion`. The suspicious 
+`@uncheckedVariance` is ignored for now. Plus, `QFac` changes a bit to have
+a proper type bound; trait Q1 and Q2 implement `def companion` to mark what 
+their own companion objects are.
 
 
     import scala.annotation.unchecked.uncheckedVariance
@@ -79,7 +81,7 @@ a proper type bound; trait Q1/Q2 change to tell their own companion objects.
 
 
 
-Now adding _filter_ for Q collection:
+Now adding `filter` for Q collection:
 
     trait QLike[+A, +Repr]
       extends HasNewBuilderRepr[A, Repr] {
@@ -96,9 +98,9 @@ Now adding _filter_ for Q collection:
       }
     }
 
-The implementation of _filter_ makes use of for-comprehension to apply
-the predicate _p_ to every element. Therefore, _foreach_ has to be supported as
-well. The implementation appears in _QArrBuf_:
+The implementation of `filter` makes use of _for-comprehension_ to apply
+the predicate `p` to every element. Therefore, `foreach` has to be supported as
+well. The implementation appears in `QArrBuf`:
 
     class QArrBuf[A] (initialSize: Int)
       extends Q2[A]
@@ -109,6 +111,14 @@ well. The implementation appears in _QArrBuf_:
         f(e.asInstanceOf[A])
       }
     }
+
+To conclude, `filter`:
+
+1. Use `newBuilderRepr` to get `bdr: Budr`. 
+2. Use _for-comprehension_ to apply the predicate to elements. Copy those
+   return true to `bdr` by `+=()`
+3. In the end, calling `result()` on `bdr` to give the new collection in
+   the question. 
 
 Try it in REPL:
 
@@ -123,6 +133,7 @@ Try it in REPL:
 
 
 
+[Gist](https://gist.github.com/cfchou/5715447)
 
 
 

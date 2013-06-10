@@ -1,18 +1,19 @@
 ---
 title: Builder Basics
+tags: scala, Builder
 ---
 
-Following [the previous post](./2013-05-11-venture-out-on-canbuildfrom.html),
+Following [the previous post](./2013-05-11-polyglot-canbuildfrom.html),
 I would like to have a really functioning Q collection instead of a do-nothing 
 one. In other words, it should be able to store elements. 
-In the collection library, creating a collection to store elements is deeply
-related to a trait called _Builder_ which is going to be talked about in this 
+In the Scala collection library, creating a collection to store elements is deeply
+related to a trait called `Builder` which is going to be talked about in this 
 article. Note that only Builder itself will be discussed here. Its relationship 
-to _CanBuildFrom_ will be saved for [another post].
+to `CanBuildFrom` will be saved for another post.
 
-I'll continue building a _Q_ collection that mimics the collection library, 
-at least cosmetically. Some understanding
-of how collections are organized in the library is necessary. For that matter, 
+I'll continue building a Q collection in the previous post that mimics the 
+collection library, at least cosmetically. Some understanding
+of how collections are organized in the collection library is necessary. For that matter, 
 [this discussion](http://stackoverflow.com/questions/1722137/scala-2-8-collections-design-tutorial?lq=1)
 does a fantastic job. The pictures below are copied from
 [here](https://github.com/sirthias/scala-collections-charts/downloads) and they are very helpful.
@@ -27,12 +28,12 @@ concrete class which builds the underlying object exposes the trait A as type:
         scala> val sq = Seq(10,11)
         sq: Seq[Int] = List(10, 11)
 
-In this case REPL reports that val sq's __dynamic type__ is _Seq_ which is what
-the underlying object exposes as; and its __static type__ is _List_ which is 
-the most-derived concrete class.
+In this case REPL reports that `val sq`'s __dynamic type__ is `Seq` which is what
+the underlying object exposes as; and its __static type__ is `List` which is 
+a most-derived concrete class and we say `List` is `Seq`'s _default
+implementation_.
 
-Having these pictures in mind, let's start to flesh out the Q collection from 
-[the previous post](./2013-05-11-venture-out-on-canbuildfrom.html).
+Having these pictures in mind, let's start to flesh out the Q collection. 
 In the end, those additional entities will be created to mimic the collection library:
 
     Budr                ---     Builder
@@ -40,7 +41,7 @@ In the end, those additional entities will be created to mimic the collection li
     QArrBuf             ---     ArrayBuffer
 
 
-The newly added _Budr_ is like _collection.mutable.Builder_ but is simplified 
+The newly added `Budr` is like `scala.collection.mutable.Builder` but is simplified 
 a lot. It helps to build a collection of type _To_ containing elements of type
 _Elm_. 
 
@@ -50,8 +51,8 @@ _Elm_.
     }
 
 
-QCompanion has the _empty_ and _apply_ that helps to create Q collection, with
-the help of _newBuilder_ which Q1's companion must provide.
+`QCompanion` has `empty` and `apply` that create Q collection with
+the help of `newBuilder` that Q1's companion must provide.
 
     trait QCompanion[+CC[_]] {
       // deriving companion object should implement newBuilder
@@ -82,22 +83,18 @@ the help of _newBuilder_ which Q1's companion must provide.
       def newBuilder[A] = new QArrBuf
     }
 
-Looking into _QCompanion_'s apply to get a taste of how _Budr_ helps construct
+Looking into `QCompanion`'s apply to get a taste of how `Budr` helps construct
 a Q collection:
 
-1. Use _newBuilder_ to get a _Budr_. 
-2. Use _+=()_ on the _Budr_ to put element into it.
-3. In the end, calling _result()_ on the _Budr_ to give the new collection in
+1. Use `newBuilder` to get a `Budr`. 
+2. Use `+=()` on the `Budr` to put element into it.
+3. In the end, calling `result()` on the `Budr` to give the new collection in
    the question. 
 
-In Q1 object, _newBuilder_ is defined as _QArrBuf_ which plays the role of a 
-most-derived concrete class that builds the underlying collection. _QArrBuf_ 
-itself derives __Budr[A, QArrBuf[A]]__ and __Q1__ so that it conforms to
-polymorphic type Budr[A, Q1[A]]. 
-
-
-_QArrBuf_ is the most-derived concrete class for the Q collection, and as 
-stated before, itself is and implements a _Budr_.
+In Q1 object, `newBuilder` is to new a `QArrBuf` which plays the role of a 
+most-derived concrete class that builds the underlying storage. `QArrBuf` 
+itself derives `Budr[A, QArrBuf[A]]` and `Q1` so that it conforms to
+polymorphic type `Budr[A, Q1[A]]`. 
 
     class QArrBuf[A] (initialSize: Int)
       extends Q1[A]
@@ -122,13 +119,13 @@ stated before, itself is and implements a _Budr_.
     }
 
 The implementation is no doubt incomplete and has lots of flaws. Nevertheless,
-it's sufficient for points I make here.
+it's sufficient for the following discussion.
 
 
-Now I'd like to add another flavor, _Q2_, to the Q collection. Just like in 
+Now I'd like to add another flavor, Q2, to the Q collection. Just like in 
 the official collection library there are many traits on the way from concrete 
 classes up to the root trait Traversable. Think
-_Q1_ as _Traversable_, _Q2_ as _Iterable_ or any other deriving traits.
+Q1 as `Traversable`, Q2 as `Iterable` or any other deriving traits.
 
     trait Q2[+A] extends Q1[A] with QLike[A, Q2[A]]
 
@@ -138,7 +135,8 @@ _Q1_ as _Traversable_, _Q2_ as _Iterable_ or any other deriving traits.
     }
 
 To accommodate this trait, _QArrBuf_ has to be changed to derive Q2 because 
-_QArrBuf_ _is the most-derived concrete class_:
+_QArrBuf_ _is the most-derived concrete class and is the default
+implementation for Q1 an Q2_:
 
     class QArrBuf[A] (initialSize: Int)
       extends Q2[A]
@@ -149,7 +147,7 @@ Till now, the Q collection's hierarchy looks like:
     Q1 <--- Q2 <--- QArrBuf
 
 
-Try _Q_s in REPL:
+Try in REPL:
 
     scala> Q1(1,2,3)
     res0: Q1[Int] = QArrBuf@7e5ccc
@@ -163,4 +161,5 @@ Try _Q_s in REPL:
 ###Reference###
 [Scala 2.8 collections design tutorial](http://stackoverflow.com/questions/1722137/scala-2-8-collections-design-tutorial?lq=1)
 
+[Scala collection charts](https://github.com/sirthias/scala-collections-charts/downloads)
 

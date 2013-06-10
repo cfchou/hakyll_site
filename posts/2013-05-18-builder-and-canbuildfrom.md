@@ -1,13 +1,14 @@
 ---
 title: Builder and CanBuildFrom in map
+tags: scala, Builder, CanBuildFrom
 ---
 
-In the collection library, _CanBuildFrom_ is a way of creating _Builder_. Many 
-functions in implementation traits like _TraversableLike_ use _CanBuildFrom_ to 
-generate the right kind of _Builder_ to create an adequate collection.
+In the collection library, `CanBuildFrom` is a way of getting `Builder`. Many 
+functions in implementation traits like `TraversableLike` use `CanBuildFrom` to 
+get the right kind of `Builder` to create an adequate collection.
 
 
-Following previous posts, there's a trivial function _foo_ in QLike which looks like:
+In previous posts, there's a trivial function `foo` in `QLike` which looks like:
 
     trait QLike[+A, +Repr]
       extends HasNewBuilderRepr[A, Repr] {
@@ -15,10 +16,11 @@ Following previous posts, there's a trivial function _foo_ in QLike which looks 
       ...
     }
 
-In [this post](), I stated that the found implicit _CBF_ will then help 
-to infer foo's type parameter _That_ but we couldn't really tell in this case
-as _That_ is not used anywhere. A better example is _map_ in TraversableLike.
-Likewise, I implement _map_ for the Q collection.
+In [this post](./2013-05-11-polyglot-canbuildfrom.html), I stated that the 
+found implicit `CBF` will then help 
+to infer `foo`'s type parameter `That` but we couldn't really tell in the case
+because `That` is not used anywhere. A better example is `map` in 
+`TraversableLike`. Likewise, I implement `map` for the Q collection.
 
 
     trait QLike[+A, +Repr]
@@ -35,24 +37,25 @@ Likewise, I implement _map_ for the Q collection.
       }
     }
 
-'Repr', as it appears so often in the code as a type parameter, I haven't talked 
-about it yet. Conventionally, It names the __initial__ type that __Repr__esents 
-the underlying storage. That is, if running _Q2(1, 2, 3)_ in REPL, 
+`Repr`, as it appears so often in the code as a type parameter, I haven't 
+really talked about it yet. Conventionally, It names the _initial_ type that 
+__Repr__esents the underlying storage. That is, if running `Q2(1, 2, 3)` in 
+REPL: 
     
     scala> Q1(1,2,3)
     res0: Q1[Int] = QArrBuf@7e5ccc
 
-_Q2[Int]_ is the type argument corresponding to _Repr_s appearing in relevant 
+`Q2[Int]` is the type argument for _Repr_s appearing in relevant 
 traits/classes, e.g.
 
     HasNewBuilderRepr[A, Repr]  --->   HasNewBuilderRepr[Int, Q2[Int]]
     QLike[A, Repr]              --->   QLike[Int, Q2[Int]]
 
-Here in QLike there is _"repr"_ as the _"this" object typed as_ _Repr_. It can 
-be passed into functions that want _Repr_.
+Here in `QLike` there is `def repr` as _"this" object typed as_ `Repr`. `repr` 
+can be passed into functions that want `Repr`.
 
-Following _repr_ is _map_'s definition. At the beginning, a _Budr_ is obtained 
-by calling _apply_ on the implicit _CBF_. _apply_ and other relevant snippets
+Following `repr` is `map`'s definition. At the beginning, a `Budr` is obtained 
+by calling `apply` on the implicit `CBF`. `apply` and other relevant snippets
 are following:
 
     trait CBF[-Fr, -Elm, +To] {
@@ -78,16 +81,16 @@ are following:
       // was CBF[Q1[_], A, Q1[A]]
       implicit def cbf[A]: CBF[Coll, A, Q1[A]] =
         reusableGCBF.asInstanceOf[GCBF[A]]
-j     ...
+      ...
     }
 
 
-It can be seen there's a twist in the nested class _GCBF_ that extends CBF.
-_Coll_ preserves _QCompanion_'s type parameter. For instance, _Coll_ in 
-_QCompanion[Q1]_ would be _Q1[_]/Q1[Any]_.
+There's a twist in the nested class `GCBF` that extends CBF.
+`Coll` preserves `QCompanion`'s type parameter. For instance, `Coll` in 
+`QCompanion[Q1]` would be `Q1[_]` or `Q1[Any]`.
 
-_genericBuilder_ is a newly added members in _QTmpl_ that calls a companion
-object's _newBuilder_.
+`genericBuilder` is a newly added members in `QTmpl` that calls a companion
+object's `newBuilder`:
 
     trait QTmpl[+A, +CC[X] <: Q1[X]]
       extends HasNewBuilderRepr[A, CC[A] @uncheckedVariance] {
@@ -98,16 +101,16 @@ object's _newBuilder_.
       def genericBuilder[B]: Budr[B, CC[B]] = companion.newBuilder[B]
     }
 
-Comparing _newBuilderRepr_ with _genericBuilder_, the latter is a polymorphic
-method that gives a _Budr_ for __elements of another type__.
+Comparing `newBuilderRepr` with `genericBuilder`, the latter is a polymorphic
+method that gives a `Budr` for _elements of another type_.
 
 To dot to i's and cross the t's, it's easier to look at a real case. 
 
     scala> Q2(1, 2, 3) map ("s" * _)
     res9: Q1[String] = QArrBuf@1f68406c
 
-In this case, QLike is parameterized as QLike[Int, Q2[Int]], so _Repr_ is Q2[Int].
-Leave _That_ untouched at the moment, the parameterized _map_ is:
+In this case, `QLike` is parameterized as QLike[Int, Q2[Int]], so `Repr` 
+is `Q2[Int]`. Leave `That` untouched at the moment, the parameterized _map_ is:
 
     def repr: Q2[Int] = ...
 
@@ -118,8 +121,8 @@ Leave _That_ untouched at the moment, the parameterized _map_ is:
     }
 
 
-As object _Q2_ doesn't provide an implicit _CBF_, implicit lookup searches the
-companion object of _Q2_'s superclass, _Q1_, and happily finds one. 
+As object Q2 doesn't provide an implicit `CBF`, implicit lookup searches the
+companion object of Q2's superclass, Q1, and happily finds one. 
 
     required: CBF[Q2[Int], String, Any]
               =>  apply(from: Q2[Int]): Budr[String, Any]
@@ -130,20 +133,22 @@ companion object of _Q2_'s superclass, _Q1_, and happily finds one.
                     from.genericBuilder[String] 
 
 As what's found conforms what's required in terms of variance.
-It's perfectly legal to pass "_repr: Q2[Int]_" to 
-"_apply(from: Q1[Any]): Budr[String, Q1[String]]_".
-Therefore __"from" is actually an Q2[Int] object__. It dynamically
-dispatches to _Q2[Int].genericBuilder[String]_ and in the end
-_Q2.newBuilder[String]_ which is returned as "_val b: Budr[String, Q1[String]]_".
+It's perfectly legal to pass `repr: Q2[Int]` to 
+`apply(from: Q1[Any]): Budr[String, Q1[String]]`.
+Therefore _`from` is actually an `Q2[Int]` object_. It dynamically
+dispatches to `Q2[Int].genericBuilder[String]` and successively
+`Q2.newBuilder[String]` which is returned as `val b: Budr[String, Q1[String]]`.
 
-Then the following steps are simple. _Budr b_ copies(_+=_) elements in the current Q2
-collection and eventually gives a Q1 collection.
+Then the following steps are simple. 
+Run the mapping function on all elements in the current Q2 collection. Copy 
+results into `Budr b` elements. Eventually `Budr b` gives a Q1 collection.
 
-_map_ a function over a Q2 collection gives a Q1 collection? This doesn't sound 
+`map` a function over a Q2 collection gives a Q1 collection? This doesn't sound 
 good enough.
-_map_ should do its best to retain the collection's dynamic type. I would
-expect _map_ to return a Q2 collection. This flaw is due to no suitable
-_CBF_ in Q2 companion so _CBF_ in Q1 companion is used. This can be fixed:
+_map_ in Q collection can do more to retain the collection's dynamic type. I 
+would expect Q2's `map` to return a Q2 collection instead of Q1. This flaw is 
+due to no suitable `CBF` in Q2 companion so one in Q1 companion is used.  This 
+can be fixed:
 
     object Q2 extends QFac[Q2] {
       implicit def cbf[A]: CBF[Coll, A, Q2[A]] =
@@ -156,7 +161,8 @@ Test it in REPL:
     scala> Q2(1, 2, 3) map ("s" * _)
     res0: Q2[String] = QArrBuf@b98df1f
 
-The implicit lookup would find it instead and give a Budr[String, Q2[String]].
+The _implicit lookup_ would find it instead and give a `Budr[String,
+Q2[String]]`
 
     found:    CBF[Q2[_], String, Q2[String]]
               =>  apply(from: Coll), _Coll_ is Q2[_] 
@@ -165,78 +171,42 @@ The implicit lookup would find it instead and give a Budr[String, Q2[String]].
 
 
 
-
-
 ###Difference between map and filter###
-Note the difference between _map_ and [_filter_]() in what's returned. 
-When _filter/map_ a predicate/function over a collection A to get a collection B:
+Note the difference between `map` and
+[filter](./2013-05-13-builder-in-filter.html) in what's returned. 
+When `filter/map` a predicate/function over a collection A to get a collection 
+B:
 
-* _filter_:
+* `filter`:
     + static type(underlying storage's type) doesn't change.
     + dynamic type(the type of collection and type of elements) doesn't change.
-* _map_:
-    + static type may change
+* `map`:
+    + static type may change but should have a good reason.
     + dynamic type
         - the type of collection may change but should have a good reason.
         - the type of elements can change depending on the mapping function.
 
-These differences lead to different way of getting _Budr_. Specifically, 
-_filter_ doesn't use an implicit _CBF_ as it always builds the same collection 
-from its own Budr.
+These differences lead to different way of getting `Budr`. Specifically, 
+`filter` doesn't need an implicit `CBF` as it always builds the same collection.
 
     def filter(p: A => Boolean): Repr = {
       val bdr = newBuilderRepr
       ...
     }
 
-On the other hand, because _map_ might be supplied with a customized implicit 
-_CBF_ rather than the one found in the companion object, what it can do is 
-to pass the original collection, typed as _Repr_, to _CBF_'s apply(from). This 
-customized _CBF_ may/should in turn use original collection's _Budr_. 
-
-What follows is a "bad" example. It's bad because one, it doesn't use original
-collection's Budr, and two, it doesn't make much sense:
-
-    scala> Q2(1, 2, 3) map ("s" * _)
-    res0: Q2[String] = QArrBuf@b98df1f
-
-    scala>   implicit val bad_cbf = new CBF[Q2[_], String, Q1[String]] {
-         |     def apply(from: Q2[_]): Budr[String, Q1[String]] = {
-         |       // doesn't use "from"
-         |       Q1.newBuilder[String]
-         |     }
-         |   }
-    bad_cbf: CBF[Q2[_],String,Q1[String]] = $anon$1@6e99175d
-
-    scala> Q2(1, 2, 3) map ("s" * _)
-    res1: Q1[String] = QArrBuf@25ddfb6a
-
-This _bad___cbf_ ruins the previous effort in making _map_ returning the same Q2 
-collection.
-
-Sometimes, this behaviour does make sense. For instance:
-
-    scala> val m = Map("a"->1, "b"->2)
-    m: scala.collection.immutable.Map[String,Int] = Map(a -> 1, b -> 2)
-
-    scala> m map (_._2)
-    res1: scala.collection.immutable.Iterable[Int] = List(1, 2)
-
-It runs _map_ over a Map and returns its superclass Iterable.
+On the other hand, because `map` might be supplied with a customized implicit 
+`CBF` rather than the one found in a companion object, what `map` can do is 
+to pass the original collection as `from: Repr`, to `CBF`'s `apply(from)`.
+This customized `CBF` can work on original collection's `Budr` if it
+wants. 
 
 
+###to[CC[_]]###
+There are situations where an implicit `CBF`'s `apply` doesn't use the original
+collection. 
 
 
-
-
-
-
-
-There are situations where an implicit CBF doesn't use the original
-collection's Budr. 
-
-
-Once such case is TraversableLike's _to[CC[___]]_ which is now added to
+One such case is `TraversableLike`'s `to[CC[_]]` which is now added to
 QLike as well. 
 
     trait QLike[+A, +Repr]
@@ -254,8 +224,9 @@ QLike as well.
     }
 
 What it does is to converts this Q collection into another by copying all 
-elements. Calling _apply_ on _CBF_ doesn't require _repr_ as an argument here.
-Another _apply_ must be added to _CBF_.
+elements. This _apply_ called on _CBF_ doesn't require _repr_ as an argument 
+here. It implies that _CBF_ can generate Budr on its own.
+Another _apply_ is be added to _CBF_ to support this semantics.
 
     trait CBF[-Fr, -Elm, +To] {
       def apply(from: Fr): Budr[Elm, To]
@@ -275,8 +246,11 @@ Another _apply_ must be added to _CBF_.
 
 In the case of converting Q2 to Q1:
 
-    scala> Q2(1,2,3).to[Q1]
-    res0: Q1[Int] = QArrBuf@19dc6592
+    scala> val q2 = Q2(1, 2, 3)
+    q2: Q2[Int] = QArrBuf@1c54f78
+
+    scala> q2.to[Q1]
+    res3: Q1[Int] = QArrBuf@15884bf
 
 Implicit is looked up as such:
 
@@ -290,37 +264,41 @@ Here is the interesting thing. _"That"_ can be decided to be _Q1[Any]_ in
 what's required this time, so that implicit lookup knows Q1's companion is the 
 place to look at.
 
-Nevertheless, a customized _CBF_ can be supplied to outweigh Q1's _CBF_. From 
-its point of view, it doesn't care(and doesn't have) the original collection 
-"_from_" because it will generate a _Budr_ totally on its own.
-Another concrete class _QListBuf_ is provided to help illustrate this.
-It plays similar role as _QArrBuf_.
 
-    class QListBuf[A]
-      extends Q1[A]
-      with Budr[A, QListBuf[A]] {
+Q2[Int] to Q1[Int] is simple, but how about Q2[Int] to List[Int]? 
+Although List is not part of the Q hierarchy, converting to List still can be 
+achieved by supplying a customized CBF.
 
-      protected var list: List[AnyRef] = List.empty[AnyRef]
+    scala> q2.to[List]
+    <console>:21: error: could not find implicit value for parameter bf:
+        CBF[Nothing,Int,List[Int]] q2.to[List]
 
-      def +=(elem: A): this.type = {
-        list = elem.asInstanceOf[AnyRef] +: list
-        this
-      }
-      def result(): QListBuf[A] = this
+    scala> implicit def lst_cbf[A] = new CBF[Q1[A], A, List[A]] {
+         |   def apply(from: Q1[A]): Budr[A, List[A]] = apply()
+         |
+         |   def apply(): Budr[A, List[A]] = 
+         |     Q1.newBuilder[A] mapResult { oldTo =>
+         |       var newTo = List.empty[A]
+         |       for (x <- oldTo)
+         |         newTo = newTo :+ x  // inefficient
+         |       newTo
+         |     }
+         | }
 
-      def foreach[U](f: A => U): Unit = list.foreach { e =>
-        f(e.asInstanceOf[A])
-      }
-    }
+    scala> q2.to[List]
+    res4: List[Int] = List(1, 2, 3)
 
-Now the hierarchy of Q collection is like:
+_lst_cbf_ allows Q1 or Q2 of any type to be converted to a List of that type.
+Its _apply(from)_ doesn't use _from_ at all. Note that _lst_cbf_ bring a side
+effect that _map_ over Q unexpectedly returns a List too:
 
-    Q1 <--- Q2 <--- QArrBuf(default)
-      \
-       <--- QListBuf
+    scala> q2 map ("s" * _)
+    res7: List[Any] = List(s, ss, sss)
 
-QArrBuf is Q's default concrete class for Q1 and Q2. QListBuf is provided as an
-alternative implementation for Q1.
+I think it's probably a better idea that I shouldn't mark lst_cbf as implicit
+and only pass it explicitly when needed.
+
+
 
 
 

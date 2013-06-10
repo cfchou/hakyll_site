@@ -146,7 +146,7 @@ _QArrBuf_ _is the most-derived concrete class_:
 
 Till now, the Q collection's hierarchy looks like:
 
-    Q1 <- Q2 <- QArrBuf
+    Q1 <--- Q2 <--- QArrBuf
 
 
 Try _Q_s in REPL:

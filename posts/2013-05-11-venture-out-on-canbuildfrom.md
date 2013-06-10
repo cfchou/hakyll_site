@@ -85,7 +85,8 @@ I copy a technique that's used in the collection library:
 `QFac` is the factory that's derived by `Q1`'s companion. It has a special
 `CBF` called `reusableGCBF` which type is essentially `CBF[CC[_], Nothing, CC[Nothing]]`
 
-When implicit lookup happens, `cbf[A]` in object Q1 is tried to match the implicit `CBF` required.
+_cbf[A]_ in object _Q1_ is a polymorphic method. When implicit lookup happens, 
+it is tried to match the implicit `CBF` required.
 It is done by casting `reusableGCBF`. For instance, If `q1.foo("a string")` is called,
 the required implicit is of type `CBF[Q1[Int], String, Any]`. `reusableGCBF` is casted from  
 `CBF[Q1[_], Nothing, Q1[Nothing]]` to  `CBF[Q1[_], String, Q1[String]]` in order to

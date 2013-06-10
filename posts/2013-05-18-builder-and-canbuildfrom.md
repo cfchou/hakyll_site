@@ -194,14 +194,14 @@ These differences lead to different way of getting `Budr`. Specifically,
       ...
     }
 
-On the other hand, because `map` might be supplied with a customized implicit 
+On the other hand, because `map` might be supplied with a custom implicit 
 `CBF` rather than the one found in a companion object, what `map` can do is 
 to pass the original collection as `from: Repr`, to `CBF`'s `apply(from)`.
-This customized `CBF` can work on original collection's `Budr` if it
+This custom `CBF` can work on original collection's `Budr` if it
 wants. 
 
 
-###to[CC[_]]###
+###Convert to another collection###
 There are situations where an implicit `CBF`'s `apply` doesn't use the original
 collection. 
 
@@ -223,14 +223,14 @@ QLike as well.
       }
     }
 
-What it does is to converts this Q collection into another by copying all 
-elements. This _apply_ called on _CBF_ doesn't require _repr_ as an argument 
-here. It implies that _CBF_ can generate Budr on its own.
-Another _apply_ is be added to _CBF_ to support this semantics.
+What it does is to converts this Q collection to another by copying all 
+elements. This `apply` called on `CBF` doesn't take `repr` as an argument 
+here. It implies that `CBF` can generate a `Budr` on its own.
+`CBF` is expanded to support this semantics.
 
     trait CBF[-Fr, -Elm, +To] {
       def apply(from: Fr): Budr[Elm, To]
-      def apply(): Budr[Elm, To]
+      def apply(): Budr[Elm, To] // no argument
     }
 
     trait QFac[CC[X] <: Q1[X] with QTmpl[X, CC]]
@@ -239,6 +239,7 @@ Another _apply_ is be added to _CBF_ to support this semantics.
       class GCBF[A] extends CBF[CC[_], A, CC[A]] {
         // element type is flexible
         def apply(from: Coll) = from.genericBuilder[A]
+        // default use newBuilder in campanion
         def apply() = newBuilder[A]
       }
       ...
@@ -260,14 +261,12 @@ Implicit is looked up as such:
     found:    CBF[Q1[_], Int, Q1[Int]]
               =>  apply(): Budr[Int, Q1[Int]] = newBuilder[Int] 
 
-Here is the interesting thing. _"That"_ can be decided to be _Q1[Any]_ in
-what's required this time, so that implicit lookup knows Q1's companion is the 
-place to look at.
+`That` is `Q1[Any]`, so that implicit lookup knows Q1's companion is the place 
+to look at and consequently use Q1's `newBuider[Int]`
 
-
-Q2[Int] to Q1[Int] is simple, but how about Q2[Int] to List[Int]? 
+`Q2[Int]` to `Q1[Int]` is simple, but how about Q2[Int] to List[Int]? 
 Although List is not part of the Q hierarchy, converting to List still can be 
-achieved by supplying a customized CBF.
+achieved by supplying a custom CBF.
 
     scala> q2.to[List]
     <console>:21: error: could not find implicit value for parameter bf:
@@ -288,24 +287,44 @@ achieved by supplying a customized CBF.
     scala> q2.to[List]
     res4: List[Int] = List(1, 2, 3)
 
-_lst_cbf_ allows Q1 or Q2 of any type to be converted to a List of that type.
-Its _apply(from)_ doesn't use _from_ at all. Note that _lst_cbf_ bring a side
-effect that _map_ over Q unexpectedly returns a List too:
+`lst_cbf` allows Q1 or Q2 of element of any type to be converted to a List of
+elements of that type. Look at the `apply()` without argument. It use Q1's
+`newBuilder[A]` to create a `Budr[A, Q1[A]]`, which also is the underlying 
+storage. Then it calls `mapResult` which is another function just added to
+Budr's definition:
+
+    trait Budr[-Elm, +To] {
+      ...
+      def mapResult[NewTo](f: To => NewTo): Budr[Elm, NewTo] = {
+        new Budr[Elm, NewTo] with Proxy {
+          val self = Budr.this
+          def +=(x: Elm): this.type = { self += x; this }
+          def result: NewTo = f(self.result)
+        }
+      }
+    }
+
+`mapResult` creates another Budr which is just a proxy that forwards all calls 
+except `def result: NewTo` to the original Budr. When calling `result`, it 
+converts the original Budr's old collection `To` to the desired 
+collection `NewTo` at once. Therefore, we eventually get a `Budr[A, List[A]]` 
+acting as a proxy for `Budr[A, Q1[A]]`.
+
+ 
+
+There's a flaw in `lst_cbf`. `lst_cbf` brings a unwelcome side effect: `map` over Q 
+unexpectedly returns a `List` too: 
 
     scala> q2 map ("s" * _)
     res7: List[Any] = List(s, ss, sss)
 
-I think it's probably a better idea that I shouldn't mark lst_cbf as implicit
-and only pass it explicitly when needed.
+To deal with this, I think it's probably better to not marking `lst_cbf` as 
+implicit and only passing it explicitly like `q2.to[List](lst_cbf)`.
 
 
-
-
-
-
-
-
+[Gist](https://gist.github.com/cfchou/5752310)
 
 
 ###Reference###
-http://stackoverflow.com/questions/5200505/how-are-scala-collections-able-to-return-the-correct-collection-type-from-a-map/5200633#5200633
+[How are Scala collections able to return the correct collection type from a
+map operation?](http://stackoverflow.com/questions/5200505/how-are-scala-collections-able-to-return-the-correct-collection-type-from-a-map/5200633#5200633)

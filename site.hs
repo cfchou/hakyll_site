@@ -70,3 +70,11 @@ postList sortFilter = do
     itemTpl <- loadBody "templates/post-item.html"
     list    <- applyTemplateList itemTpl postCtx posts
     return list
+
+
+--------------------------------------------------------------------------------
+test1 = buildTags "*" (\s -> Identifier Nothing s)
+
+
+
+--------------------------------------------------------------------------------

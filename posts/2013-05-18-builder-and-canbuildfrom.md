@@ -1,5 +1,5 @@
 ---
-title: Builder and CanBuildFrom in map
+title: Builder and CanBuildFrom in Map
 tags: scala, Builder, CanBuildFrom
 ---
 

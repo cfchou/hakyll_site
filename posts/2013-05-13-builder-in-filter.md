@@ -14,15 +14,28 @@ in functions of _implementation traits_, such as `filter` in `TraversableLike`:
         ...
     }
 
-No implicit `CanBuildFrom` is needed as the type of collection involved in the
-results is still `Repr`. 
+`Repr`, it appears very often in the code as a type parameter. Conventionally, 
+It names the _initial_ type that __Repr__esents the underlying storage. That 
+is, if running `Q1(1, 2, 3)` in REPL: 
+    
+    scala> Q1(1,2,3)
+    res0: Q1[Int] = QArrBuf@7e5ccc
+
+`Q1[Int]` is the type argument for _Repr_s appearing in relevant 
+traits/classes in Q1[+A]'s type hierarchy, e.g.
+
+    QLike[A, Repr]              --->   QLike[Int, Q1[Int]]
+
+
+No implicit `CanBuildFrom` is needed in `filter` as the type of collection 
+involved in the results is still `Repr`. 
 
     scala> Seq(1,2,3) filter (_ > 2)
     res4: Seq[Int] = List(3)
 
 In this case, `filter` over `Seq(1, 2, 3)` gives a `Seq[Int]`. Internally, 
-`newBuilder[Int]: Builder[Int, Seq[Int]]` in Seq's companion object is used 
-to create the result.
+since `Repr` is `Seq[Int]`, `newBuilder[Int]: Builder[Int, Seq[Int]]` in Seq's 
+companion object is used to create the result.
 
 On the basis of [previous discussion](./2013-05-12-builder-basics.html), 
 I'll implement `filter` for the Q collection.
@@ -33,8 +46,8 @@ some abstractions, namely:
     QTmpl               ---      GenericTraversableTemplate
 
 
-The first abstraction added is `HasNewBuilderRepr`. It provides `Budr[A, Repr]` that
-builds `Repr` out of `Repr`. That is, the two collections are of the same type,
+The first abstraction added is `HasNewBuilderRepr`. It provides `Budr[A, Repr]` 
+that builds `Repr` out of `Repr`. That is, the two collections are of the same type,
 so are their elements.
 
 
@@ -44,12 +57,12 @@ so are their elements.
     }
 
 
-In addition, `QTmpl` is added. It is intended to be mixed in to Q1 or Q2 
-trait. Its default implementation for `newBuilderRepr` is simply pointing to 
-`newBuilder` in corresponding companion objects which derives `QCompanion`. The suspicious 
-`@uncheckedVariance` is ignored for now. Plus, `QFac` changes a bit to have
-a proper type bound; trait Q1 and Q2 implement `def companion` to mark what 
-their own companion objects are.
+In addition, `QTmpl` is added. It is intended to be mixed in to Q1 or Q2 trait.
+Its default implementation for `newBuilderRepr` is simply pointing to
+`newBuilder` in corresponding companion objects which derives `QCompanion`.
+The suspicious `@uncheckedVariance` is ignored for now. Plus, `QFac` changes a
+bit to have a proper type bound; trait Q1 and Q2 implement `def companion` to
+mark what their own companion objects are.
 
 
     import scala.annotation.unchecked.uncheckedVariance
@@ -81,7 +94,7 @@ their own companion objects are.
 
 
 
-Now adding `filter` for Q collection:
+Now add `filter` for Q collection:
 
     trait QLike[+A, +Repr]
       extends HasNewBuilderRepr[A, Repr] {

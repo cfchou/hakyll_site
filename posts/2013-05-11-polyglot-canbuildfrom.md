@@ -24,8 +24,8 @@ Roughly speaking, I try to imitate the class hierarchy of
     CBF     ---     CanBuildFrom
     GCBF    ---     GenericCanBuildFrom
 
-`QLike`, as many XXXLike's in the collection library are so called 
-__implementation traits__). It provides the default and
+`QLike`, as many XXXLike's in the collection library, is an
+__implementation trait__. It provides the default and
 general implementation for many functions which make use of `CBF`.
 
     class CBF[-Fr, -Elm, +To]

@@ -6,12 +6,12 @@ tags: scala, Builder
 Following [the previous post](./2013-05-11-polyglot-canbuildfrom.html),
 I would like to have a really functioning Q collection instead of a do-nothing 
 one. In other words, it should be able to store elements. 
-In the Scala collection library, creating a collection to store elements is deeply
+In Scala collection library, creating a collection to store elements is deeply
 related to a trait called `Builder` which is going to be talked about in this 
 article. Note that only Builder itself will be discussed here. Its relationship 
 to `CanBuildFrom` will be saved for another post.
 
-I'll continue building a Q collection in the previous post that mimics the 
+I'll continue building the Q collection in the previous post that mimics the 
 collection library, at least cosmetically. Some understanding
 of how collections are organized in the collection library is necessary. For that matter, 
 [this discussion](http://stackoverflow.com/questions/1722137/scala-2-8-collections-design-tutorial?lq=1)
@@ -23,13 +23,13 @@ does a fantastic job. The pictures below are copied from
 
 
 It can be seen from the pictures that for a trait A, there's a most-derived 
-concrete class which builds the underlying object exposes the trait A as type:
+concrete class which builds the underlying object exposes trait A as type:
 
         scala> val sq = Seq(10,11)
         sq: Seq[Int] = List(10, 11)
 
 In this case REPL reports that `val sq`'s __dynamic type__ is `Seq` which is what
-the underlying object exposes as; and its __static type__ is `List` which is 
+a most-derived concrete class exposes as; and its __static type__ is `List` which is 
 a most-derived concrete class and we say `List` is `Seq`'s _default
 implementation_.
 

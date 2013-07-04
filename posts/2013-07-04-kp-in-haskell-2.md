@@ -3,18 +3,18 @@ title: Solving Knapsack Problem in Haskell (Continued)
 tags: haskell, knapsack problem, branch and bound, discrete optimization, coursera
 ---
 
-Continuing my solution to the knapsack problem, I also implement __Branch and
-Bound(BB)__ algorithm presented in the course. The result in the end was 
-surprising: large test data sets, to whom DP was not applicable, could be 
-solved within seconds. An open question is: what are the characteristics of 
+Continuing my solution to the knapsack problem, I also implement _branch and
+bound(BB)_ algorithm presented in the course. The result in the end was 
+surprising: large test data sets, to whom _dynamic programming(DP)_ was not applicable, could be 
+solved within seconds. An open question then is: what are the characteristics of 
 data that make BB particularly suitable?
 
 
 My first version of BB was darn slow. Even BB had the potential to drop many
 unnecessary computations, on each node the estimation function just took too
-much time. The naive idea was that given _n_ is the total number of items, on a 
-level _i_ node the function would in the worst case go through `n - i` items 
-to get the estimation. 
+much time. The naive idea was that given _n_ is the total number of items, a
+_n-level_ tree will be built. For a level _i_ node the estimation function 
+in the worst case could go through `n - i` items before return. 
 
 
 The other problem was precision lost due to calculation on float numbers. This
@@ -22,15 +22,15 @@ is worse than inefficiency, because the optimal wouldn't be accurate at all. Suc
 float point calculation happens in three places:
 
 1. Sorting items with their worth per kilo -- dividing one's value with its weight.
-2. Getting estimation by adding the weight of part of item. 
-3. Comparing against the estimation.
+2. Adding part of weight of an item to complete an estimation.
+3. Comparing with an estimation.
 
 
 The inefficiency can be improved by by optimizing the estimation function:
 
 1. Looking at items in a descending oder of their worth to build a tree.
 2. Filter out items that have weights that are larger than the whole capacity.
-3. Caching some metrics during the estimation on a node, then its children can
+3. Caching some metrics during estimation on a node, then its children can
    make use them to calculate as little as possible and of course update them 
    if necessary.
 4. One immediate benefit is, for the child that represents a selecting item, 
@@ -54,8 +54,8 @@ order of a program difficult to reason about. Therefore, the benefit of `trace`
 is limited.
 
 As to the aspect of design pattern, my program is a bit messy since too many states 
-are carried around. This is where _state monads_ is good at. Moreover, I don't 
-make use of _type class_ which should be helpful.
+are carried around. This is where _reader/state monads_ are good at. Moreover, I don't 
+make use of _type class_ which could have been helpful.
 
 
 Overall, this course _Discrete Optimization_ on Coursera is very well taught. 

@@ -7,7 +7,7 @@ tags: haskell, knapsack problem, dynamic programming, discrete optimization, cou
 
 The first assignment of the course Discrete Optimization is to solve a _0-1 
 knapsack problem_. For every data set, a valid output would be a optimal value 
-and the combination of items that produce it. This can be approached by 
+and the combination of items that produces it. This can be approached by 
 two algorithms presented in the lecture. One is _dynamic programming(DP)_, the 
 other is _branch and bound(BB)_.
 
@@ -43,7 +43,7 @@ I can do something like
 1. The values in every row being built only depend on the values in previous 
 rows, `tbl` can safely refer to itself. 
 2. Since `initTable` is __not strict on its variables__, only part of
-`tbl`("dependee" if you like) gets evaluated inside `initTable`.  
+`tbl`(some values in previous rows) gets evaluated inside `initTable`. 
 
 
 That's all very well if the problem is small or you like to easily backtrack
@@ -55,7 +55,7 @@ For problems like trying to fit 1000 items in a knapsack of max weight of
 1000000, the memory usage can easily go up to GBs. A more sensible way is to
 rely on the fact that the values in every row being built only depend on the
 values in _the previous row_. Therefore, all other previous rows can be thrown
-away and only a constant size memory is used on the way. 
+away and only a constant size memory for a row is used. 
 
     let row = initRow k vs ws
 
@@ -69,13 +69,13 @@ away and only a constant size memory is used on the way.
 
 
 `itbl` is the helper that creates a new row based on a given one and it behaves 
-in a tail-recursive fashion. However, the memory consumption keeps growing 
+in a tail-recursive fashion. However, the memory consumption still keeps growing 
 as proceeding to the next row. It seems that nothing is thrown away and
 garbage-collected. 
 
-Turned out that it was where I got bitten by _laziness_. Since
-`Vector.replicate/Vector.generate` don't get fully evaluated, a lager _thunk_
-just gets carried into `itbl` every recursion. Virtually nothing is thrown away.
+Turned out that it was where I got bitten by _laziness_. Since `itbl` is __not
+strict on__ `Vector.replicate/Vector.generate`, they don't get fully evaluated. 
+A lager _thunk_ just gets carried into `itbl` in every recursion. Virtually nothing is thrown away.
 
 The way to deal with this problem is obvious -- forcing 
 `Vector.replicate/Vector.generate` fully evaluated to a value.
@@ -89,14 +89,22 @@ former and it worked very well.
 
 Whilst one-row solution saves me the memory, it is impossible to backtrack what
 items are selected. As the result, I do bookkeeping for the chosen items on the 
-way of building a row. An useful data structure here is lined list.
+way of building a row. An useful data structure here is linked lists.
 
-Note that in the worst scenario, the linked lists would still cover all items 
-and the memory consumption would still be large. In fact, 2 out of 6 data sets 
-drained the memory on my 32-bit Linux box during submission. I'm sure there are some 
-optimization techniques that can remedy this problem, but I didn't investigate 
-more as I thought BB might be able to tackle this.
+Note that in the worst scenario, the linked lists would cover a large
+number of items, thus the memory consumption would still be huge. In fact, 2 
+out of 6 data sets drained the memory on my 32-bit Linux box during submission. 
+I'm sure there are some optimization techniques that can remedy this problem, 
+but I didn't investigate more as I thought BB might be able to tackle this.
 
+
+###Vectorization###
+
+The time complexity for DP is __O(n * k)__ where `n` is the
+number of items, `k` is the capacity of knapsack. This is too slow for large
+data sets. I think one way to dramatically improve it is to parallize the job 
+of calculating a row. The languages with vector/matrix as primitive data types 
+like Octave or Mathlab can perform vectorization to save a lot of time.
 
 
 

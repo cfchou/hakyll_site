@@ -10,7 +10,7 @@ monad's definition in Haskell and explore how it's come about. I would give my t
 
 On wikipedia[2] it reads, 
 
-    A function written in __continuation-passing style(CPS)__ takes an extra argument:
+    A function written in "continuation-passing style(CPS)" takes an extra argument:
     an explicit "continuation" i.e. a function of one argument. 
     When the CPS function has computed its result value, it "returns" it by calling
     the continuation function with this value as the argument.
@@ -63,10 +63,10 @@ Every function can be turned into CPS. Here's a contrived example:
 
 
     -- bigDoubleSquareCPS n k == k $ 2 * (n ^ 2) > 10 * n
-    bDSqCPS :: Int -> (Bool -> a) -> a
-    bDSqCPS n k = dSqCPS n $ \i -> k (i > 10 * n)
+    bDsqCPS :: Int -> (Bool -> a) -> a
+    bDsqCPS n k = dSqCPS n $ \i -> k (i > 10 * n)
 
-As `factCPS`, a lambda is created as a new continuation at every descending level.
+Like `factCPS`, a lambda is created as a new continuation at every descending level.
 A pattern can be observed:
 
     outterFunc n k = innerFunc (p n) $ \x -> k (q n x)
@@ -81,7 +81,7 @@ where `\x -> k (q n x)` is a continuation devised for `innerFunc`.
                 q n' a = n' * a
             in  factCPS (p n) \i -> k (q n i)
 
-    bDSqCPS n k = 
+    bDsqCPS n k = 
         let p = id
             q n' a = a > 10 * n'
         in  dSqCPS (p n) $ \i -> k (q n i)
@@ -113,9 +113,9 @@ For example, `bDsq` in sequential form would be:
 `bDsq`'s innermost computation `Sq` turns out to be the first statement. Every
 following statement __adds up a layer of computation__ to form an outer nested function.
 
-And it's how the sequential `bDsqS` gets converted to a nesting one:
+The sequential `bDsqS` gets converted to a nesting `bDsqN`:
     
-    bDSqN n =
+    bDsqN n =
         run (^ 2) n (\i1 ->
             run (* 2) i1 (\i2 -> i2 > n * 10))
  
@@ -144,7 +144,7 @@ computation:
 
 The following pseudo is somewhat sloppy, but I hope the idea is correct.
 As we only care about how computations interact with continuations, not the
-computation itself, we wrap a computations as a `Cont`.
+computations themselves, we wrap a computation as a `Cont`.
 
     m = Cont (run func1 n)           -- m :: Cont r a
 
@@ -165,7 +165,7 @@ Observing that `funcNCPS n` is a computation expecting a continuation, so why no
 There you go. This is what `>>=` of `Cont` is defined as:
 
     (>>=) :: Cont r a -> (a -> Cont r b) -> Cont r b
-    m >>= k =
+    m >>= f =
        = Cont $ \k ->
            runCont m (\a -> runCont(f a) k))
 
